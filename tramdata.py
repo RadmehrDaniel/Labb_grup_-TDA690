@@ -25,10 +25,13 @@ def build_tram_stops(jsonobject):
         print(stops)
   
 
-build_tram_stops(STOP_FILE)    
+with open(STOP_FILE) as f:
+    build_tram_stops(f)
 
 def build_tram_lines(lines): #lines is the file name.
     tram_lines = {}
+    tram_times = {}
+    prev_stop = None
     for row in lines:
         #print(f.read())
         if row.strip() == "": #removes empty lines
@@ -40,12 +43,30 @@ def build_tram_lines(lines): #lines is the file name.
                 #for row in f[0:26].strip():
                     tram_lines[line_number] = [] #Creating an empty list inside the dictionary.
             else: 
-                stop_name = row[0:26].strip()
-                tram_lines[line_number].append(stop_name)
+                curr_stop = row[0:26].strip()
+                tram_lines[line_number].append(curr_stop)
+                
+                #Tram times:
+                
+                curr_time = int(row.strip().split(":")[1]) 
+                
+                if prev_stop != None: 
+                    time_diff = curr_time - prev_time 
+                    if curr_stop not in tram_times or prev_stop not in tram_times[curr_stop]:
+                        if prev_stop not in tram_lines: 
+                            tram_times[prev_stop] = {} 
+                    tram_times[prev_stop][curr_stop] = time_diff 
+
+            
+                
+            
+                prev_time = curr_time
+                prev_stop = curr_stop
 
 
     #print(tram_lines)
-    print(tram_lines)
+
+    print(tram_times)
    
          
 
