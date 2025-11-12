@@ -1,6 +1,6 @@
 import sys
 import json
-from haversine import haversine, Unit
+from haversine import haversine
 
 
 
@@ -34,24 +34,17 @@ def build_tram_stops(jsonobject):
     #             stops[stop]["lon"] = i[1]
 
 
-
-with open(STOP_FILE) as f:
-    build_tram_stops(f)
-
-
 def build_tram_lines(lines):  # lines is the file name.
     tram_lines = {}
     tram_times = {}
     prev_stop = None
     for row in lines:
-        # print(f.read())
         if row.strip() == "":  # removes empty lines
             continue
         else:
             if row.strip().endswith(":"):
                 line_number = row.strip().replace(":", "")
                 if line_number not in tram_lines:
-                    # for row in f[0:26].strip():
                     tram_lines[line_number] = []  # Creating an empty list inside the dictionary.
                     prev_stop = None
             else:
@@ -73,11 +66,6 @@ def build_tram_lines(lines):  # lines is the file name.
                 prev_stop = curr_stop
 
     return tram_lines, tram_times
-
-
-
-with open(LINE_FILE) as f:
-    build_tram_lines(f)
 
 
 def build_tram_network(stopfile, linefile):
@@ -145,9 +133,6 @@ def distance_between_stops(stopdict, stop1, stop2):
     stop1_coords = (stopdict[stop1]["lat"], stopdict[stop1]["lon"])
     stop2_coords = (stopdict[stop2]["lat"], stopdict[stop2]["lon"])
     return haversine(stop1_coords, stop2_coords)
-    
-
-distance_between_stops(build_tram_stops(open(STOP_FILE)), "Chalmers", "Svingeln")  
 
 
 def answer_query(tramdict, query):
@@ -182,9 +167,6 @@ def answer_query(tramdict, query):
     if query == "quit":
         return None
     return "sorry, try again"
-    
-    
-
 
 
 def dialogue(tramfile=TRAM_FILE):
@@ -203,4 +185,3 @@ if __name__ == '__main__':
         build_tram_network(STOP_FILE,LINE_FILE)
     else:
         dialogue()
-
