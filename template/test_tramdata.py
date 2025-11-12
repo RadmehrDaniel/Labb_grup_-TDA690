@@ -20,8 +20,48 @@ class TestTramData(unittest.TestCase):
         ans = answer_query(self.tramdict, "via Chalmers")
         self.assertEqual(ans, ['6', '7', '8', '10', '13'])
 
-    # add your own tests here
+    def test_all_lines_exist(self):
+        lines = []
+        with open(LINE_FILE, "r", encoding="utf-8") as file: 
+            for row in file: 
+                if row.strip().endswith(":"):
+                    line_number = row.strip().replace(":", "")
+                    lines.append(line_number)
+        
+        for line in lines:
+            self.assertIn(line, self.linedict, msg= line + " not in linedict")
 
+    def test_all_stops_equal(self):
+        with open(LINE_FILE, "r", encoding="utf-8") as file: 
+            stops = None
+            for row in file:
+                if row.strip() == "":
+                    continue
+                else:
+                    if row.strip().endswith(":"):
+                        if stops != None:
+                            self.assertListEqual(stops, self.linedict[line_number], msg= "stops are not equal for line " + line_number)
+                        stops = []
+                        line_number = row.strip().replace(":", "")
+                    else:
+                        stop = row[0:26].strip()
+                        stops.append(stop)
+            self.assertListEqual(stops, self.linedict[line_number], msg= "stops are not equal for line " + line_number)
+                        
+    def test_distances(self):
+        for stop1 in self.stopdict.keys():
+            for stop2 in self.stopdict.keys():
+                self.assertLess(distance_between_stops(self.stopdict, stop1, stop2), 20, msg="unreasonable distance between stops " + stop1 + " and " + stop2)
+    
+    def test_pre_curr(self):
+        for line, stops in self.linedict.items(): #values = stops 
+            for stop1 in stops: 
+                for stop2 in stops: 
+                    self.assertEqual(time_between_stops(self.linedict, self.tramdict["times"], line, stop1, stop2), time_between_stops(self.linedict, self.tramdict["times"], line, stop2, stop1), msg = "The distance between stops is not equal both ways")
+                         
+        
+    # add your own tests here
+    # 
 
 if __name__ == '__main__':
     unittest.main()
