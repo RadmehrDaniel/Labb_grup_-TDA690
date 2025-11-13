@@ -93,7 +93,7 @@ def lines_via_stop(linedict, stop):
     for line, stops in linedict.items():
         if stop in stops:
             l_v_s.append(line)
-    l_v_s.sort()
+    l_v_s.sort(key=lambda line: int(line))
     return l_v_s
             
 
@@ -102,7 +102,7 @@ def lines_between_stops(linedict, stop1, stop2):
     for line, stops in linedict.items():
         if stop1 in stops and stop2 in stops:
             l_b_s.append(line)
-    l_b_s.sort()
+    l_b_s.sort(key=lambda line: int(line))
     return l_b_s
 
 
@@ -132,7 +132,10 @@ def distance_between_stops(stopdict, stop1, stop2):
    
     stop1_coords = (stopdict[stop1]["lat"], stopdict[stop1]["lon"])
     stop2_coords = (stopdict[stop2]["lat"], stopdict[stop2]["lon"])
-    return haversine(stop1_coords, stop2_coords)
+    return round(haversine(stop1_coords, stop2_coords), 3)
+    
+
+distance_between_stops(build_tram_stops(open(STOP_FILE)), "Chalmers", "Svingeln")  
 
 
 def answer_query(tramdict, query):

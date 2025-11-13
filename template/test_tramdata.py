@@ -20,6 +20,30 @@ class TestTramData(unittest.TestCase):
         ans = answer_query(self.tramdict, "via Chalmers")
         self.assertEqual(ans, ['6', '7', '8', '10', '13'])
 
+    def test_query_between(self):
+        ans = answer_query(self.tramdict, "between Medicinaregatan and Saltholmen")
+        self.assertEqual(ans, ['13'])
+
+    def test_query_time_between(self):
+        ans = answer_query(self.tramdict, "time with 5 from Munkebäckstorget to Sankt Sigfrids Plan")
+        self.assertEqual(ans, 9)
+
+    def test_query_distance_between(self):
+        ans = answer_query(self.tramdict, "distance from Temperaturgatan to Lackarebäck")
+        self.assertEqual(ans, 10.092)
+
+    def test_query_unknown_arguments(self):
+        ans = answer_query(self.tramdict, "between Medicinareberget and Saltholmen")
+        self.assertEqual(ans, "unknown arguments")
+        
+    def test_query_try_again(self):
+        ans = answer_query(self.tramdict, "distance between Chalmers and Ramberget")
+        self.assertEqual(ans, "sorry, try again")
+        
+    def test_query_quit(self):
+        ans = answer_query(self.tramdict, "quit")
+        self.assertEqual(ans, None)
+
     def test_all_lines_exist(self):
         lines = []
         with open(LINE_FILE, "r", encoding="utf-8") as file: 
