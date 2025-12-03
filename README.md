@@ -1,4 +1,4 @@
-# Lab 1: Information extraction
+# Lab 3: A web application for tram networks
 
 Advanced Python Course  
 Chalmers DAT690 / DIT516 / DAT516  
@@ -8,306 +8,531 @@ by Aarne Ranta & John J. Camilleri
 
 ## Purpose
 
-The purpose of Lab 1 is to read information from different formats and combine it to useful data structures.
-We will consider two different data formats:
+The purpose of this lab is to build a web application replicating some functionalities of apps such as [Västtrafik's Travel Planner](https://www.vasttrafik.se/reseplanering/reseplaneraren/).
+Your application will:
 
-- JSON, processed by the Python library `json`,
-- plain text, processed by indices `[0]`, slices `[1:5]`, and standard
-string methods such as `split()`, `strip()`, `join()`.
+- display the complete map of tram lines
+- highlight shortest paths in terms of time and geographical distance
+- calculate total travel time by taking changes into account
+- show actual departures from any stop by clicking on it
 
-The data collected from these files is saved in a new JSON file,
-`tramnetwork.json`, which is ready to be used in applications - including Labs 2 and 3.
-The command `python3 tramdata.py init` produces this file.
+Here is an example screenshot:
 
-The target data structures are dictionaries, which enable efficient queries about the data.
-If run with the command `python3 tramdata.py`, the program will enable the following kind of dialogue:
+![shortest-path](./app-shortest.png)
 
-```plain
-$ python3 tramdata.py
-> via Chalmers
-['6', '7', '8', '10', '13']
-> between Chalmers and Valand
-['7', '10']
-> time with 6 from Chalmers to Järntorget
-10
-> distance from Chalmers to Järntorget
-1.628
-```
+In some more detail, here is what the three different screens should look like:
 
-These structures and queries are preparation for the later labs, where
-they are embedded in an object-oriented hierarchy (Lab 2) and used in
-the back-end of a web application (Lab 3).
+- [home screen](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/home.html)
+- [route search form](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/find_route.html)
+- [search result](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/show_route.html)
 
-An integral part of the lab is also a set of **tests**, which you will submit together with your solutions.
-These tests must be written by using the `unittest` standard library of Python.
+Unlike the official app, ours will not have access to the actual timetables, but just to the distances and times as defined in Labs 1 and 2.
+This is of course a severe simplification, but on the other hand,
+our app will be usable for any transport system that can be
+represented by the class `TramNetwork`.
+Clicking on the created map will give access to actual traffic information from Västtrafik.
 
-Learning outcomes:
+Another difference from the official app is that we only run ours in a safe `localhost` environment.
+Thereby we do not have to deal with security issues, and it will also be much easier for all groups to finish the project.
 
-- main constructs of Python, reaching the level of the introductory
-Python course:
-  - string manipulation
-  - input and output
-  - reading and writing files
-  - lists and dictionaries
-  - mathematical formulas and the `math` library
+The learning outcomes include:
 
-- the JSON data format and the `json` library
+- visualization with more details on positions and colours
+- simple front-end construction with HTML
+- putting everything together by using a web application framework, Django
+- more details of `graphviz` library, various libraries belonging to the Django framework
+- virtual environments, the `venv` module
 
-- testing and the `unittest` library
+## Getting started
 
-- version control and Git
+We will follow the standard worklow for the Django framework.
+There are several tutorials available, for instance:
 
-### Testing
+- [Official Django Tutorial](https://docs.djangoproject.com/en/5.2/intro/tutorial01/)
+- [Django Girls Tutorial](https://tutorial.djangogirls.org/en/)
+- [w3schools Django Tutorial](https://www.w3schools.com/django/)
 
-You should create your own tests by using the `unittest` standard library.
-The file [`test_tramdata.py`](./test_tramdata.py) helps you to get started.
-Copy this file and add your own tests at the same time as you are
-writing each of the functions.
-The file is a part of the solution you have to submit.
+You can look at these for more information, but this document is aimed to be self-contained and sufficient for the lab.
 
-## Task
+### Directory structure
 
-The task is to write three functions that build dictionaries, four functions that extract information from them, and a dialogue function that answers to queries.
-The dialogue function should be divided into two parts to enable more accurate testing.
+For this lab, we will start from a blank slate and build up the project's directory structure step-by-step.
+The final structure will look as follows.
+The files are obtained as follows:
 
-### Dictionary building functions
-
-`build_tram_stops(jsonobject)`, building a **stop dictionary**, where
-
-- keys are names of tram stops
-- values are dictionaries with
-  - the latitude
-  - the longitude
-
-Here is a part of the stop dictionary, showing just one stop:
-
-```py
-{
-  'Majvallen': {
-    'lat': 57.6909343,
-    'lon': 11.9354935
-  }
-}
-```
-
-An input file in the expected format is [`tramstops.json`](./template/data/tramstops.json).
-The function involves an easy conversion using the `json` library.
-
-`build_tram_lines(lines)`, building a **line dictionary**, where
-
-- keys are names (usually consisting of digits, but to be treated as strings)
-- values are lists of stop names, in the order in which the tram runs
-
-Here is an example:
-
-```py
-{
-  "9": [
-    "Angered Centrum",
-    "Storås",
-    "Hammarkullen",
-    # many more stops in between
-    "Sandarna",
-    "Kungssten"
-  ]
-}
-```
-
-An input file in the expected format is
-[`tramlines.txt`](./template/data/tramlines.txt).
-It is a textual representation of timetables for each line, looking as
-follows:
+- copied from [`files`](./files/) in this repository (marked 🔵)
+- created automatically by Django (unmarked in the diagram)
+- slightly modified from automatic files (marked 🟡)
+- explained in detail but written by you (marked 🟠)
+- written by you (marked 🔴)
+- generated by your code (marked ⚪️)
 
 ```plain
-1:
-Östra Sjukhuset           10:00
-Tingvallsvägen            10:01
-Kaggeledstorget           10:03
-Ättehögsgatan             10:03
+lab3
+├── .gitignore 🟠
+├── db.sqlite3
+├── manage.py
+├── mysite
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py 🟡
+│   └── wsgi.py
+├── venv
+│   └── ...
+├── static
+│   ├── tramnetwork.json ⚪️
+│   └── tram-url.json 🔵,⚪️
+└── tram
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── forms.py 🟠
+    ├── migrations
+    │   └── __init__.py
+    ├── models.py 🟠
+    ├── templates
+    │   └── tram
+    │      ├── find_route.html 🔵
+    │      ├── home.html 🔵
+    │      ├── images
+    │      │   ├── gbg_tramnet.svg 🔵,⚪️
+    │      │   └── generated
+    │      │       └── ... ⚪️
+    │      └── show_route.html 🔵
+    ├── tests.py
+    ├── urls.py 🟠
+    ├── utils
+    │   ├── __init__.py 🔴
+    │   ├── color_tram_svg.py 🔵
+    │   ├── graphs.py 🔴
+    │   ├── trams.py 🔴
+    │   └── tramviz.py 🔴
+    └── views.py 🔵
 ```
 
-Thus, for each tram line, there is a section starting with the line number and a colon.
-After that, the stops are given together with times.
-For simplicity, each line starts from time 10:00.
-We are not interested in these times as such, but in the **transition times** between adjacent stops.
-Thus, for instance, the transition time between Tingvallsvägen and Kaggeledstorget is 2 minutes.
-We want to store the transition times in a non-redundant way, under the following assumptions:
+### Create Django project
 
-- transition times are independent of line, departure time and direction:
-  - the transition time from A to B is the same for all lines and departures
-  - the transition time from B to A is always the same as from A to B
+Now we will prepare our environment, install the Django library, and initialize our Django project.
 
-Hence, we don't want to add transition times to the line dictionary, because this would lead to storing redundant information.
-Instead, from the file [`tramlines.txt`](./template/data/tramlines.txt), we also build a **time dictionary** which stores the times between adjacent stops, where
+1. Create a directory for this project (not the same as in course GitHub):
 
-- keys are stop names
-- values are dictionaries from stop names to numbers of minutes
+    ```sh
+    $ mkdir lab3
+    ```
 
-Here is an example of a time dictionary entry:
+2. Move inside it:
 
-```py
-{
-  "Tingvallsvägen": {
-    "Kaggeledstorget": 2
-  }
-}
+    ```sh
+    $ cd lab3
+    ```
+
+3. Create a Python virtual environment (maybe not necessary, but the best practice):
+
+    ```sh
+    $ python3 -m venv venv
+    ```
+
+    This will create the directory `venv` with lots of things in it, but you don't need to concern yourselves with its contents.
+
+4. Activate the virtual environment:
+    - on Linux/Mac:
+
+      ```sh
+      $ source venv/bin/activate
+      ```
+
+    - on Windows:
+
+      ```plain
+      $ venv\Scripts\activate.bat
+      ```
+
+      or
+
+      ```plain
+      $ venv\Scripts\activate.ps1
+      ```
+
+      Which of these two commands will work depends on what shell you are using. If unsure, try both.
+  
+    You should now see the string `(venv)` prefixed to your command line prompt.
+
+5. Install the necessary Python libraries into the virtual environment:
+
+    ```sh
+    (venv) $ pip install django==5.2.7
+    (venv) $ pip install networkx==3.5
+    ```
+
+6. Create a new Django project with:
+
+    ```sh
+    (venv) $ django-admin startproject mysite .
+    ```
+
+    (the last dot `.` is necessary: it refers to your working directory, where it creates a directory named
+  `mysite` and the file `manage.py`).
+
+At later times (every time you resume working on the project), only the `activate` step (4) is needed.
+
+### Initialize database
+
+This step is needed to initialize the database:
+
+```sh
+$ python manage.py migrate
 ```
 
-To summarize, the general idea with these data structures and functions is to **avoid redundancy**: every piece of information is given only once in the dictionaries.
-In particular,
+It creates a database (in the file `db.sqlite3`), which is a standard part of any Django project, even if we don't use it in this lab.
 
-- the location of each stop is given only once, in the stop dictionary,
-- the time between two adjacent stops is given only once, in the time dictionary.
+### Run web server
 
-Moreover,
+Now we can start the web server with:
 
-- the text file that gives lines and their stops and times is read only once.
-
-`build_tram_network(stopfile, linefile)` puts everything together. It reads the two input files and writes a
-third one, entitled `tramnetwork.json`.
-This JSON file represents a dictionary that contains the three dictionaries built:
-
-```jsonc
-{
-  "stops": {
-    "Östra Sjukhuset": {
-      "lat": 57.7224618,
-      "lon": 12.0478166
-    },  // and so on, the entire stop dict
-  },
-  "lines": {
-    "1": [
-      "Östra Sjukhuset",
-      "Tingvallsvägen",
-      // and so on, all stops on line 1
-    ],  // and so on, the entire line dict
-  },
-  "times": {
-    "Tingvallsvägen": {
-      "Kaggeledstorget": 2
-    },  // and so on, the entire time dict
-  }
-}
+```sh
+$ python manage.py runserver
+...
+Starting development server at http://127.0.0.1:8000/
+...
 ```
 
-### Query functions
+Open the URL above in a web browser to check if the installation succeeded.
+You should see a generic Django-generated page, which tells you one important thing: that your server is up and running.
 
-Each of the following functions uses one or more of the dictionaries you built.
+## Create the `tram` Django app
 
-`lines_via_stop(linedict, stop)` lists the lines that go via the given stop.
-The lines should be sorted in their numeric order, that is, '2' before '10'.
+Now that we have a basic Django server set up, it's time to start customising it for our task. For this we will create a Django "app" with the name `tram`:
 
-`lines_between_stops(linedict, stop1, stop2)` lists the lines that go from stop1 to stop2.
-The lines should be sorted in their numeric order, that is, '2' before '10'.
-Notice that all lines are assumed to run in both directions.
+```sh
+$ python manage.py startapp tram
+```
 
-`time_between_stops(linedict, timedict, line, stop1, stop2)` calculates the time from `stop1` to `stop2` along the given `line`. This is obtained as the sum of all times between adjacent stops. If the stops are not along the same line, an error message is printed.
+This creates the directory `tram`, with a lot of predefined contents, but also many things that you will have to complete with your own code.
 
-`distance_between_stops(stopdict, stop1, stop2)` calculates the geographic distance between any two stops, based on their latitude and longitude.
-The distance is hence not dependent on the tram lines.
-You can implement this function by using the
-[Haversine](https://pypi.org/project/haversine/) library.
+To recognize this file in your Django website, add the line:
 
-### Tests for dictionary building & querying
+```python
+'tram.apps.TramConfig',
+```
 
-The file `test_tramdata.py` already tests if all stops associated with lines in `linedict` also exist in `stopdict`.
-You should add at least the following tests:
+to the end of the `INSTALLED_APPS` list in `mysite/settings.py`.
 
-- that all tram lines listed in the original text file `tramlines.txt` are included in `linedict`,
-- that the list of stops for each tramline is the same in `tramlines.txt` and `linedict`,
-- that all distances are "feasible", meaning less than 20 km (test this test with a smaller number to see it fail!),
-- that the time from *a* to *b* is always the same as the time from *b* to *a* along the same line.
+### Create model
 
-### The dialogue function
+Create a data model for route searches in `tram/models.py`:
 
-The `dialogue(tramfile)` function implements a dialogue about tram information.
-It starts by reading the data from the JSON file `tramnetwork.json`,
-which has been produced by your program.
-Then it takes user input and answers to any number of questions by using your query functions.
-Following kinds of input are interpreted:
+```python
+from django.db import models
 
-- `via <stop>`, answered by `lines_via_stop()`
-- `between <stop1> and <top2>`, answered by `lines_between_stops()`
-- `time with <line> from <stop1> to <stop2>`, answered by `time_between_stops()`
-- `distance from <stop1> to <top2>`, answered by `distance_between_stops()`
-- `quit` - terminating the program
-- input with non-existing line or stop names results in the message "unknown arguments" and a new prompt
-- any other input results in the message "sorry, try again" and a new prompt
-- the prompt is `> `.
+class Route(models.Model):
+    dep = models.CharField(max_length=200)
+    dest = models.CharField(max_length=200)
 
-The main challenge is to deal correctly with stop names that consist of more than one word.
-A hint for this is to locate the positions of keywords such as "and", which can appear between stop names, and consider slices starting or ending at them.
-The simplest method is the standard `index()` method of strings.
-Also the regular expression library `re` could be used, but is probably more complicated to learn unless you already know it from before.
+    def __str__(self):
+        return self.dep + '-' + self.dest
+```
 
-For the purpose of testing, and more generally to cleanly separate input and output from processing, the `dialogue()` function should be divided into two separate functions:
+Each instance of our model will contain a departure and destination stop, stored as strings.
+Then migrate the model to the database:
 
-- `answer_query(tramdict, query)`, which takes the query string and returns the answer as a value (list or integer or float). You should decide how to handle queries that cannot be interpreted.
+```sh
+$ python manage.py makemigrations tram
+$ python manage.py migrate tram
+```
 
-- `dialogue(tramfile)` itself, which reads the file into a dictionary, loops by asking for input, and for each input prints the value returned by `answer_query(tramdict, query)`, except for input `quit` (terminating the loop) and for uninterpreted input (asking the user to try again).
+You will see that your `db.sqlite3` file has contents now, but they are in a binary format that you cannot read.
 
-### Tests for the dialogue
+**Note:** In this lab, the application does not add any data to the database, but its schema (the `Route` class) is used to structure the queries made via the route search form.
+This is known as the _MVT Design Pattern_ (Model-View-Template):
 
-Testing a complete dialogue is tricky, but you can can easily test the `answer_query(tramdict, query)` function.
-What you should test is that the answer printed for a query
-(in the format written by the user) is the same as the expected answer.
-This then tests that queries are parsed and interpreted correctly.
+- a **model** (in `tram/models.py`) is a class that defines a type of data
+- a **view** (to be added to `tram/views.py`) is a function that processes a user request and returns a template
+- a **template** (to be added to `tram/templates/tram`) is an HTML file that shows the data
 
-There is already one example of this in `test_tramdata.py`, which you should extend with your own test cases.
-Here are some more examples to get you started:
+The database could also be manipulated in the _SQL_ language, but one of the things Django does is generate SQL queries from Python code, so that you usually don't need to use SQL directly. This is known as _ORM, Object-Relational Mapping_.
+
+### Update URL patterns
+
+Edit the generated `mysite/urls.py` so that it contains the following:
+
+```python
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('tram.urls')),
+]
+```
+
+The `admin` URL is used for managing the website and requires a login. You can try and create users and passwords, but this is not needed in this lab.
+
+The second `path` includes the URLs given in our `tram` app.
+For this purpose, you have to create the file `tram/urls.py`:
+
+```python
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.tram_net),
+    path('route/', views.find_route),
+]
+```
+
+Each path has two required arguments:
+
+- the path extending the hostname (seen in the URL field of the browser)
+- the "view", i.e. the function called when this URL is requested
+
+### Create views
+
+In order for `tram/urls.py` to work, you have to edit `tram/views.py`, so that it contains the following:
+
+```python
+from django.shortcuts import render
+from .forms import RouteForm
+
+def tram_net(request):
+    return render(request, 'tram/home.html', {})
+
+def find_route(request):
+    form = RouteForm()
+    return render(request, 'tram/find_route.html', {'form': form})
+```
+
+The former function is all we need to render the start page.
+The latter function creates a web form, but does not yet do anything with it; we will return to this later.
+
+Of course, we also need to define the `RouteForm` class and the HTML files.
+This is the next topic.
+
+### Create form
+
+In order for the `find_route` view to work, we need to create a corresponding form in `tram/forms.py`:
+
+```python
+from django import forms
+from .models import Route
+
+class RouteForm(forms.ModelForm):
+    class Meta:
+        model = Route
+        fields = ('dep', 'dest',)
+```
+
+This new form `RouteForm` is linked to our data model `Route`.
+We specifying which fields of the model should be present in the form, and Django will automatically create a web form for us.
+
+### Create templates
+
+The HTML files to be created are actually **templates**, since they contain slots where dynamic data is inserted by the server.
+The templates reside in a sub-sub-sub-directory, which has to be created first:
+
+```sh
+$ mkdir tram/templates
+$ mkdir tram/templates/tram
+```
+
+Copy the HTML template files from the [`files`](./files/) folder to the newly created `tram/templates/tram`, so that:
+
+```sh
+$ ls tram/templates/tram/
+find_route.html    home.html   show_route.html
+```
+
+### Create template images
+
+Also create the `images` subdirectory:
+
+```sh
+$ mkdir tram/templates/tram/images
+```
+
+and copy the tram network image [`gbg_tramnet.svg`](./files/gbg_tramnet.svg) into it.
+
+Note that images in this folder can be used in templates (e.g. `home.html`) but are _not_ served publicly by the web server; i.e. you _cannot_ access it via a web browser using something like `http://127.0.0.1:8000/images/gbg_tramnet.svg`.
+
+Now [run the web server](#run-web-server) again. You will see a home screen with the gorgeous SVG image of Gothenburg tram network.
+
+#### Dynamic images
+
+Our application will dynamically generate a new image for each route that is requested.
+Create a subdirectory for these dynamically generated images:
+
+```sh
+$ mkdir tram/templates/tram/images/generated
+```
+
+To avoid adding any of these generated images to the repository, tell Git to ignore this folder by creating a `.gitignore` file in the top-level folder and add this line to it:
 
 ```plain
-> via Botaniska Trädgården
-['1', '2', '7', '8', '13']
-> between Medicinaregatan and Saltholmen
-['13']
-> time with 5 from Munkebäckstorget to Sankt Sigfrids Plan
-9
-> distance from Temperaturgatan to Lackarebäck
-10.092
+tram/templates/tram/images/generated/
 ```
 
-Remember to also test negative examples, to ensure that your error handling works correctly, e.g.:
+#### Customise image (optional)
+
+If you want, you can replace this standard image with your own one. The script [`create_network_picture.py`](./files/create_network_picture.py) does this for you by calling your own `tram.py` on your own `tramnet.json` file.
+You can also try to make the picture nicer by changing positioning and other parameters.
+But before doing this, make sure to implement the rest of the basic functionalities!
+
+You can return to image generation in the task where you are expected to change the URLs in the tram stops.
+Right now, when you click at them, you should be taken to a Google search about that stop.
+
+### Render dynamic content
+
+The form `find_route.html` does not find any routes yet.
+You can submit queries, but when you press "Search", the form just becomes empty without showing any result.
+
+So now we want to add some basic functionality that actually shows the shortest path.
+The following things are needed:
+
+1. a "utility" function that actually calculates the shortest path (from Lab 2)
+2. an extended `find_route()` function in `tram/views.py` (to be copied from [`files/views.py`](./files/views.py))
+3. a template that `show_route.html` shows the route that is found (already copied above)
+
+#### Add utility functions
+
+It is a good practice to create a separate directory for "non-Django" utility functions and create an empty `__init__.py` file in it, so that it is recognized as a package.
+
+```sh
+$ mkdir tram/utils
+$ touch tram/utils/__init__.py
+```
+
+Copy the following Python files from [`files`](./files/) into `tram/utils`:
+
+- `graphs.py`, a mock-up, for the most part to be replaced by your Lab 2 version
+- `trams.py`, a mock-up, for the most part to be replaced by your Lab 2 version
+- `tramviz.py`, finding the shortest paths and marking them in SVG; for you TODO
+- `color_tram_svg.py`, actually making the colouring in SVG, no need for you to touch
+
+#### Update views
+
+Now that you have created the utility files, you can replace the simplified `tram/views.py` with the one given in [`files`](./files/views.py).
+
+Now you can visit <http://127.0.0.1:8000/route/>, submit a query and get a response (although this is just using a dummy implementation for now).
+
+## Task 1: Implement shortest path functionality
+
+It is now time to implement the core function in our app: calculating the shortest path between two stops.
+
+Most of this work is to be done in the files in `tram/utils`.
+They contain `TODO` comments that instruct you what to do.
+
+The main function in the file `tram/utils/tramviz.py`, imported in `tram/views.py`, is `show_shortest`.
+Its task is to:
+
+- find the shortest paths (time and distance)
+- use them to colour the stops in the network picture, dynamically generating a new image
+- return the shortest paths as strings to be shown in the view
+- return the file path to the dynamically generated image
+
+### Add colours
+
+As the example for the [search result](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/show_route.html) page shows, we expect three different colours to be used:
+
+- <span style="color:green">green</span> for stops on the shortest path
+- <span style="color:orange">orange</span> for stops on quickest path
+- <span style="color:darkcyan">cyan</span> for stops that are on both paths
+
+You can also use some other colours if you prefer.
+Other stops should be left white.
+The default implementation copied from [`files/tramviz.py`](./files/tramviz.py) is a mock-up, which always shows the same colours and the same route.
+
+You can of course also makes the HTML files look nicer if you have time!
+
+### Account for line changes
+
+In Lab 2 shortest path, we ignored the effect of changing from one line to the other.
+This effect is a major factor that can make the "shortest time" and "shortest distance" differ significantly.
+Its implementation requires that we recognize when a change must be made and add a suitable number of minutes or meters to the cost.
+
+One way to do this with the existing algorithms is simply to build a new graph for the network, where:
+
+- vertices are pairs `(stop, line)` for each `stop` in the original graph and each `line` than passes through it
+- every edge `(a, b)` of the original graph is multiplied to edges `((a, line), (b, line))` for every `line` that serves both `a` and `b`
+- edges are added between all vertices that have the same `stop`
+- distances and transfer time between different stops are the same as in the original graph
+- a special change distance and change time is added between vertices that have the same stop but different lines, e.g. 20 metres and 10 minutes respectively
+
+## Task 2: Data validation
+
+You should now have a working application which returns the shortest routes between two stops.
+But what happens when you enter a stop name that doesn't exist (e.g. you make a typo)?
+The Django server doesn't crash, but you will see an ugly error page and the HTTP response from the server will have status code [500 Internal Server Error](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status#500_internal_server_error).
+
+Instead, we should gracefully handle incorrect user input by returning a more appropriate HTTP status such as [400 Bad Request](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status#400_bad_request) and showing the user a suitable message.
+
+Edit the `find_route` view in your `trams/views.py` file to check for incorrect input and behave accordingly. You can use the following, but the details are up to you:
+
+```python
+from django.http import HttpResponseBadRequest
+...
+return HttpResponseBadRequest(f"Unknown stop name: {stop}")
+```
+
+## Task 3: Add links to live traffic information
+
+The main home page image `gbg_tramnet.svg` is not just a static image, but an SVG file which contains hyperlinks.
+Currently, clicking on a stop name will search the Västtrafik website for that stop name.
+
+Instead, we want clicking on a stop name to take you to Västtrafik's live traffic information page for that stop, for example the [page for Nordstan](https://avgangstavla.vasttrafik.se/?stopAreaGid=9021014004945000) which has URL:
 
 ```plain
-> between Medicinareberget and Saltholmen
-unknown arguments
-> distance between Chalmers and Ramberget
-sorry, try again
+https://avgangstavla.vasttrafik.se/?stopAreaGid=9021014004945000
 ```
 
-### The main function
+To do this, we need to:
 
-At the end of your file, make a conditional call under
+1. Create URLs for the traffic information page of each stop name, by finding the `Gid` which corresponds to each stop.
+2. Update the SVG file to replace the "search" URLs with these traffic information URLs.
 
-```py
-if __name__ == '__main__':
-```
+### Create URLs
 
-calling `build_tram_network()` if the argument `init` is present, `dialogue()` otherwise.  
-**Hint**: You can check the presence of this argument by using `sys.argv`:
+The first challenge is to create the traffic information URLs corresponding to each stop name.
+For this, we need the `Gid` of each stop.
 
-```py
-if __name__ == '__main__':
-    if sys.argv[1:] == ['init']:
-        build_tram_network("tramlines.txt", "tramstops.json")
-    else:
-        dialogue("tramnetwork.json")
-```
+An HTML page containing a full list of stop identifiers can be found in the file [`files/hållplatslista.html`](./files/hållplatslista.html).
+This file was captured from the original URL <https://www.vasttrafik.se/reseplanering/hallplatslista/>. It may look strange if you open it in your browser, but if you look at the HTML source in your text editor you will see that all stops and their `Gid`s are in fact contained there.
+So, your task is as follows:
 
-You also need to import `sys`.
+1. Investigate where and how `Gid`s are given in the HTML document.
+2. Extract the `Gid`s of all tram stops from the document.
+3. Create traffic information URLs for every stop.
+4. Save the stop-URL dictionary as a JSON file.
+
+For step 2, you can use the [standard library for parsing HTML](https://docs.python.org/3/library/html.parser.html).
+A slightly more convenient third party library which can be used for this is [Beatiful Soup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/).
+
+### Update SVG
+
+After this, you need to create a new SVG image with these new URLs.
+To do this:
+
+1. Run [`files/create_network_picture.py`](files/create_network_picture.py) making sure that `TRAM_URL_FILE` and `MY_TRAMNETWORK_JSON` point to your URL dictionary and tramnetwork file, respectively.
+2. Move the resulting file `my_gbg_tramnet.svg` to `tram/templates/tram/images/gbg_tramnet.svg`
+
+Note that this only needs to be done once for the entire project (not every time a request to the web server is made).
+There is no need to copy `create_network_picture.py` from `files` to `tram/utils` or any such place.
+
+After doing this, make another search in your web application and click at some stop to verify that the link has been updated to take you to the traffic information page for that stop.
 
 ## Submission
 
-You should submit the following files:
+Submit all the files that are needed to run your application by committing them to your repository,
+but take care to **avoid committing automatically generated files**, in particular:
 
-- `tramdata.py`
-- `tramnetwork.json` (generated by your code with `tramdata.py init`)
-- `test_tramdata.py`
+1. the dynamic images in `tram/templates/tram/images/generated/`
+2. your local Python virtual environment `venv/`
+3. cache folders such as `__pycache__/` which can be automatically created by your IDE
 
-The submitted code must be usable in the following ways:
+You should use a `.gitignore` file to avoid committing such paths to the repository.
+The `.gitignore` file itself _should_ be committed to the repository.
 
-- `python3 tramdata.py init` to produce the file `tramnetwork.json`
-- `python3 tramdata.py` to start the query dialogue
-- `import tramdata` from another Python file or the Python shell, without starting the dialogue or printing anything
-- `python3 test_tramdata.py` to run your tests
+### Peer review
+
+Before inspecting your code, we will organize peer reviewing sessions, where each group tests and reviews another group's work.
+The review report that you write will be added as a part of your submission.
+[More details about peer reviewing](./peer-review.md).
